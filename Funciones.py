@@ -98,3 +98,62 @@ query_vector, record_vector = vectorize(user_query, df, record_index)
 print("Vector de la consulta:", query_vector)
 print("Vector del registro en el índice", record_index, ":", record_vector)
 '''
+
+
+###RECOMENDAR PELÍCULAS
+def recommend(user_query, df, distance_type, num_recommendations):
+    # Inicializar un diccionario para almacenar las distancias
+    distances = {}
+    
+    if not distance_type.strip():
+        distance_type = "coseno"
+
+    # Iterar a través de los registros en el DataFrame
+    for record_index in range(len(df)):
+        query_vector, record_vector = vectorize(user_query, df, record_index)
+        if distance_type.lower() == 'cosine' or distance_type.lower() == 'coseno':
+            distancia_cos = cosine_distance(query_vector, record_vector)
+            distances[record_index] = distancia_cos
+        elif distance_type.lower() == 'jaccard':
+            distancia_jac = jaccard_distance(query_vector, record_vector)
+            distances[record_index] = distancia_jac
+    # Ordenar las distancias de menor a mayor
+    sorted_distances = sorted(distances.items(), key=lambda x: x[1])
+
+    # Obtener las n recomendaciones con las distancias más cortas
+    recommended_indices = [index for index, _ in sorted_distances[:num_recommendations]]
+    recommended_movies = df.iloc[recommended_indices]
+    print('-' * 55)  
+    print(f'\n Searched: {user_query}\n')
+    print('-' * 55)  
+    print(f'\nTop {num_recommendations} recommendations:\n')
+    for index, row in recommended_movies.iterrows():
+        
+        title = row['Title']
+        genres = row['Genres']
+        director = row['Director']
+        actors = f"{row['Actor1']}, {row['Actor2']}, {row['Actor3']}"
+        distance = distances[index]
+        
+        print(f'Title: {title}')
+        print(f'Genres: {genres}')
+        print(f'Director: {director}')
+        print(f'Actors: {actors}')
+        print(f'Distance: {distance}')
+
+        print('_' * 55)  
+
+    return 
+
+# Ejemplo de recomendar:
+'''
+    #Cargar archivo:
+df = pd.read_excel('database.xlsx', index_col=None)
+columnas = ['Title', 'Genres', 'Actor1', 'Actor2', 'Actor3', 'Director']
+df = df[columnas]
+    #Test recomendación:
+user_query = "Horror movies"
+num_recommendations = 3
+distance_type = "jaccard"
+recommend(user_query, df, distance_type, num_recommendations)
+'''
